@@ -1,105 +1,139 @@
-# PhotoDeDuplicate
+# PhotoDeDuplicate `v0.1.0`
 
-> Scan a folder for duplicate images and organize them — files are **moved**, never deleted.
+> Non-destructive desktop application to scan folders and safely isolate duplicate images — files are **moved**, never deleted!
 
-![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4)
-![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848F)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
+[![Version](https://img.shields.io/badge/version-v0.1.0-brightgreen.svg)](https://github.com/gavinfischer-keenan/photoDeDuplicate/releases/tag/v0.1.0)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D4.svg)](https://github.com/gavinfischer-keenan/photoDeDuplicate/releases/tag/v0.1.0)
+[![Installer](https://img.shields.io/badge/download-.EXE%20Installer-blue.svg)](https://github.com/gavinfischer-keenan/photoDeDuplicate/releases/tag/v0.1.0)
+[![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
-## Features
+---
 
-- **Exact duplicate detection** — SHA-256 hash comparison finds byte-for-byte identical files
-- **Perceptual duplicate detection** — dHash algorithm finds visually similar images (resized, recompressed, etc.)
-- **Non-destructive** — duplicates are moved to a timestamped output folder, never deleted
-- **Adjustable sensitivity** — advanced settings slider lets you tune perceptual matching strictness
-- **Clean output structure** — duplicates are organized into `Exact/` and `Perceptual/` subfolders
-- **Modern dark UI** — polished interface with progress tracking
+## 🚀 Download Windows Installer (.exe)
 
-## Supported Image Formats
+| Release | Platform | Download Link | Status |
+| :--- | :--- | :--- | :--- |
+| **v0.1.0 (Usable Release)** | Windows (x64) | [**Download PhotoDeDuplicate Setup 0.1.0.exe**](https://github.com/gavinfischer-keenan/photoDeDuplicate/releases/tag/v0.1.0) | 🟢 Stable / Usable |
 
-`.jpg` · `.jpeg` · `.png` · `.bmp` · `.tiff` · `.tif` · `.webp` · `.gif`
+> **Installation Note**: Double-click `PhotoDeDuplicate Setup 0.1.0.exe` to run the setup wizard. You can choose your install directory and create Start Menu / Desktop shortcuts.
 
-## Installation
+---
 
-### From Installer
+## 📸 Interface Preview & Screenshots
 
-Download the latest `PhotoDeDuplicate Setup x.x.x.exe` from
-[Releases](https://github.com/gavinfischer-keenan/photoDeDuplicate/releases)
-and run the setup wizard.
+### 1. Folder Selection & Mode Configuration
+Pick any target folder, view subfolder warnings, select scan mode, and adjust perceptual similarity tolerance:
 
-### From Source
+![PhotoDeDuplicate Main UI](assets/screen_main.jpg)
+
+### 2. Live Scan & Duplicate Isolation Results
+Track scan progress in real-time, view detailed duplicate counts, and open the organized output folder:
+
+![PhotoDeDuplicate Results UI](assets/screen_results.jpg)
+
+---
+
+## ✨ Features
+
+- **Double-Layer Scanning Engine**:
+  - 🔍 **Exact Matching**: Streaming SHA-256 cryptographic hashes find byte-for-byte identical duplicates instantly.
+  - 🎨 **Perceptual Matching**: 64-bit difference hashing (dHash via `sharp`) detects visually similar photos (resized, compressed, or slightly altered).
+- **100% Non-Destructive**:
+  - Files are **moved**, never deleted.
+  - Automatically creates a timestamped folder: `DuplicatescanMMDDHHMM/` containing `Exact/` and `Perceptual/` subdirectories.
+- **Subfolder Safety Warning**:
+  - Automatically checks if the chosen directory contains subfolders and alerts the user that subfolders are excluded from scanning.
+- **Customizable Sensitivity**:
+  - Includes an **Advanced Settings** drawer with a interactive slider to adjust perceptual Hamming distance threshold (from strict 1 to loose 20).
+- **Modern Dark UI**:
+  - Polished responsive desktop interface built with glassmorphism aesthetics, progress animations, and single-click folder exploration.
+
+---
+
+## 🛠️ How It Works
+
+```
+                        ┌──────────────────────────────┐
+                        │   Selected Target Folder     │
+                        └──────────────┬───────────────┘
+                                       │
+                        ┌──────────────┴───────────────┐
+                        │  Check Subfolder Safety Flag │
+                        └──────────────┬───────────────┘
+                                       │
+                 ┌─────────────────────┴─────────────────────┐
+                 │                                           │
+       ┌─────────▼──────────┐                     ┌──────────▼─────────┐
+       │   Phase 1: Exact   │                     │ Phase 2: Perceptual│
+       │   (SHA-256 Stream) │                     │ (dHash 9x8 Gray)   │
+       └─────────┬──────────┘                     └──────────┬─────────┘
+                 │                                           │
+                 │ Group Byte Matches                        │ Group Visual Matches
+                 ▼                                           ▼
+       ┌────────────────────┐                     ┌────────────────────┐
+       │ Moves Duplicates   │                     │ Moves Duplicates   │
+       │  to /Exact/        │                     │  to /Perceptual/   │
+       └────────────────────┘                     └────────────────────┘
+```
+
+### 1. Exact Matching Algorithm
+- Streams file data into Node.js `crypto.createHash('sha256')` to prevent memory overload.
+- Sorts duplicate candidates alphabetically; retains the first file in place and marks remaining byte-identical copies as duplicates.
+
+### 2. Perceptual Matching Algorithm (dHash)
+- Downsamples image to $9 \times 8$ grayscale using `sharp`.
+- Compares adjacent pixel luminances ($L < R \rightarrow 1$) generating a 64-bit binary fingerprint.
+- Compares fingerprints using bitwise XOR Hamming distance ($H \le \text{Threshold}$).
+
+---
+
+## 📂 Output Folder Structure
+
+When duplicates are found in your folder (e.g. `C:\Users\You\Pictures\Vacation`), PhotoDeDuplicate creates an organized subfolder:
+
+```text
+Vacation/
+├── IMG_0001.JPG                  ← Kept (Original)
+├── IMG_0002.JPG                  ← Kept (Original)
+└── Duplicatescan07311542/        ← Timestamped output folder (MMDDHHMM)
+    ├── Exact/
+    │   └── IMG_0001_copy.JPG     ← Byte-identical copy moved here
+    └── Perceptual/
+        └── IMG_0002_resized.JPG  ← Visually similar version moved here
+```
+
+---
+
+## ⚙️ Building & Development
+
+### Requirements
+- **Node.js**: v18+
+- **npm**: v9+
+
+### Commands
 
 ```bash
-# Clone the repository
-git clone https://github.com/gavinfischer-keenan/photoDeDuplicate.git
-cd photoDeDuplicate
-
 # Install dependencies
 npm install
 
-# Run the application
-npm start
-```
-
-## Usage
-
-1. **Select a folder** — Click "Browse Folder" to choose a folder to scan.
-   - If the folder contains subfolders, you'll see a warning that subfolders will not be scanned.
-
-2. **Choose scan mode**:
-   - **Exact + Perceptual** (default) — finds byte-identical copies first, then visually similar images
-   - **Exact Only** — only finds byte-for-byte identical files
-   - **Perceptual Only** — only finds visually similar images
-
-3. **Adjust sensitivity** (optional) — Open "Advanced Settings" to tune the perceptual similarity threshold with a slider.
-
-4. **Start Scan** — The app scans your images and moves duplicates to a timestamped subfolder:
-   ```
-   YourFolder/
-   └── Duplicatescan07311530/
-       ├── Exact/        ← byte-identical copies
-       └── Perceptual/   ← visually similar images
-   ```
-
-## Development
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 18+
-- npm
-
-### Running Tests
-
-```bash
+# Run automated test suite (41 tests)
 npm test
-```
 
-### Building the Installer
+# Launch local development window
+npm start
 
-```bash
+# Package production NSIS installer (.exe)
 npm run dist
 ```
 
-This produces a Windows NSIS installer in `dist_electron/`.
+---
 
-## Architecture
+## 📜 Architecture Documentation
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for a detailed technical overview
-including module descriptions, data flow, hashing algorithms, and IPC design.
+For complete technical specifications, component hierarchy, IPC communication schemas, and security design, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## How It Works
+---
 
-### Exact Matching
-Each image file is streamed through SHA-256 hashing. Files with identical
-hashes are byte-for-byte copies. The first file (alphabetically) is kept;
-the rest are moved to `Exact/`.
+## 📄 License
 
-### Perceptual Matching
-Each image is resized to 9×8 grayscale and a 64-bit difference hash (dHash)
-is computed. Images whose hashes differ by fewer bits than the threshold are
-considered visually similar. The first file (alphabetically) in each group
-is kept; the rest are moved to `Perceptual/`.
-
-## License
-
-MIT
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
