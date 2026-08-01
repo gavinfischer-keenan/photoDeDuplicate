@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>PhotoDeDuplicate</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- ─── Header ──────────────────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="logo-glow">📸</div>
+        <div>
+          <h1>PhotoDeDuplicate</h1>
+          <p class="subtitle">Find and organize duplicate images</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- ─── Step 1: Folder Selection ──────────────────────────────── -->
+      <section class="card animate-in" id="folderSection">
+        <div class="step-badge">1</div>
+        <h2>Select Folder</h2>
+        <p class="card-desc">Choose a folder to scan for duplicate images.</p>
+
+        <div class="folder-picker">
+          <button id="browseBtn" class="btn btn-primary">
+            <span class="btn-icon">📂</span> Browse Folder
+          </button>
+          <div id="folderPath" class="folder-path">No folder selected</div>
+        </div>
+
+        <div id="subfolderWarning" class="warning-banner" style="display:none;">
+          <span class="warning-icon">⚠️</span>
+          <span>This folder contains subfolders. Subfolders will <strong>NOT</strong> be scanned or included in the duplicate search.</span>
+        </div>
+      </section>
+
+      <!-- ─── Step 2: Scan Mode ─────────────────────────────────────── -->
+      <section class="card animate-in" id="modeSection" style="display:none;">
+        <div class="step-badge">2</div>
+        <h2>Scan Mode</h2>
+
+        <div class="radio-group">
+          <label class="radio-card selected" data-mode="both">
+            <input type="radio" name="scanMode" value="both" checked>
+            <div class="radio-indicator"></div>
+            <div class="radio-content">
+              <strong>Exact + Perceptual</strong>
+              <p>First finds byte-for-byte identical copies, then finds visually similar images (resized, recompressed, etc.)</p>
+            </div>
+          </label>
+
+          <label class="radio-card" data-mode="exact">
+            <input type="radio" name="scanMode" value="exact">
+            <div class="radio-indicator"></div>
+            <div class="radio-content">
+              <strong>Exact Only</strong>
+              <p>Finds files that are byte-for-byte identical — the same file copied or downloaded twice.</p>
+            </div>
+          </label>
+
+          <label class="radio-card" data-mode="perceptual">
+            <input type="radio" name="scanMode" value="perceptual">
+            <div class="radio-indicator"></div>
+            <div class="radio-content">
+              <strong>Perceptual Only</strong>
+              <p>Finds visually similar images — catches resized, recompressed, or slightly altered copies.</p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="advanced-section">
+          <button class="btn-link" id="advancedBtn">
+            <span class="chevron" id="advancedChevron">▶</span> Advanced Settings
+          </button>
+
+          <div class="advanced-panel" id="advancedSettings" style="display:none;">
+            <div class="setting-group">
+              <label class="setting-label" for="thresholdSlider">
+                Perceptual Similarity Threshold
+              </label>
+              <div class="slider-row">
+                <span class="slider-end-label">Strict</span>
+                <input type="range" id="thresholdSlider" min="1" max="20" value="10" class="slider">
+                <span class="slider-end-label">Loose</span>
+                <span class="slider-value" id="thresholdValue">10</span>
+              </div>
+              <p class="setting-hint">
+                Controls how many visual differences are allowed between two images
+                before they're considered duplicates. <strong>Lower = stricter</strong>
+                (only nearly-identical images match). <strong>Higher = looser</strong>
+                (catches more variations like resizes and recompressions, but may
+                flag images that are merely similar). Default: <strong>10</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button id="startBtn" class="btn btn-accent">
+          <span class="btn-icon">🔍</span> Start Scan
+        </button>
+      </section>
+
+      <!-- ─── Progress ──────────────────────────────────────────────── -->
+      <section class="card animate-in" id="progressSection" style="display:none;">
+        <h2>Scanning…</h2>
+        <div class="progress-meta">
+          <span id="progressPhase" class="phase-badge phase-exact">Exact Pass</span>
+          <span id="progressCount" class="progress-count">Preparing…</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p id="progressFile" class="current-file"></p>
+      </section>
+
+      <!-- ─── Results ───────────────────────────────────────────────── -->
+      <section class="card animate-in" id="resultsSection" style="display:none;">
+        <h2 id="resultsTitle">✅ Scan Complete</h2>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-value" id="exactCountStat">0</span>
+            <span class="stat-label">Exact Duplicates</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="perceptualCountStat">0</span>
+            <span class="stat-label">Perceptual Duplicates</span>
+          </div>
+        </div>
+
+        <div id="outputFolderInfo" class="output-info" style="display:none;">
+          <p>Duplicates have been moved to:</p>
+          <button id="openFolderBtn" class="btn btn-outline">
+            <span class="btn-icon">📂</span> Open Output Folder
+          </button>
+        </div>
+
+        <div id="noDuplicatesInfo" style="display:none;">
+          <p class="no-duplicates">🎉 No duplicates found! Your folder is clean.</p>
+        </div>
+
+        <div id="errorsInfo" class="errors-section" style="display:none;">
+          <p class="errors-title">⚠ Some files could not be processed:</p>
+          <ul id="errorsList" class="errors-list"></ul>
+        </div>
+
+        <button id="resetBtn" class="btn btn-secondary">Scan Another Folder</button>
+      </section>
+
+    </main>
+
+    <footer class="app-footer">
+      <p>PhotoDeDuplicate v1.0.0 — Files are <strong>moved</strong>, never deleted.</p>
+    </footer>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

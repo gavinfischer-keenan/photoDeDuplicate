@@ -1,0 +1,48 @@
+{
+  "name": "photodeduplicate",
+  "version": "1.0.0",
+  "description": "Scan a folder and remove duplicate pictures by moving them to an organized output folder",
+  "main": "src/main/main.js",
+  "author": "gavinfischer-keenan",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "jest --forceExit",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.photodeduplicate.app",
+    "productName": "PhotoDeDuplicate",
+    "directories": {
+      "output": "dist_electron",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "PhotoDeDuplicate",
+      "runAfterFinish": true
+    },
+    "asarUnpack": [
+      "**/node_modules/sharp/**"
+    ]
+  },
+  "dependencies": {
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "jest": "^29.7.0"
+  }
+}
